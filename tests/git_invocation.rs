@@ -1,17 +1,15 @@
 //! Tests command line invocation of git.
 
-use std::path::Path;
+use std::path::PathBuf;
 use std::process::Command;
-use tempfile::tempdir;
+use tempfile::{tempdir, TempDir};
 
-struct Runner<P: AsRef<Path>> {
-    dir: P,
+struct Runner {
+    dir: PathBuf,
 }
-impl<P> Runner<P>
-where
-    P: AsRef<Path>,
-{
-    fn new(dir: P) -> Self {
+
+impl Runner {
+    fn new(dir: PathBuf) -> Self {
         Self { dir }
     }
     /// Run a command and assert success.
@@ -46,25 +44,47 @@ where
     }
 }
 
-#[test]
-fn f() {
+/// Sets up a git repo for testing; returns a Runner targeting the repo dir.
+fn set_up_repo(temp_dir: &TempDir) -> Runner {
     const REPO_NAME: &str = "test_repo";
-    let temp_dir = tempdir().unwrap();
     let repo_dir_path = temp_dir.path().join(REPO_NAME);
 
-    let in_temp_dir = Runner::new(&temp_dir);
-    let in_repo_dir = Runner::new(&repo_dir_path);
+    let in_temp_dir = Runner::new(temp_dir.path().to_path_buf());
+    let in_repo_dir = Runner::new(repo_dir_path);
 
-    in_temp_dir.command_dbg("which", &["git"]);
-    in_temp_dir.command_dbg("git", &["init", REPO_NAME]);
+    in_temp_dir.command("which", &["git"]);
+    in_temp_dir.command("git", &["init", REPO_NAME]);
+    in_repo_dir.command("git", &["status"]);
+    in_repo_dir.command("git", &["config", "user.email", "test@test"]);
+    in_repo_dir.command("git", &["config", "user.name", "test"]);
 
-    in_repo_dir.command_dbg("git", &["status"]);
-    in_repo_dir.command_dbg("git", &["config", "user.email", "test@test"]);
-    in_repo_dir.command_dbg("git", &["config", "user.name", "test"]);
-    in_repo_dir.command_dbg("git", &["commit", "-m", "1", "--allow-empty"]);
-    in_repo_dir.command_dbg("git", &["commit", "-m", "2", "--allow-empty"]);
+    in_repo_dir
+}
 
-    println!("{}", in_repo_dir.stdout("git", &["log", "--oneline"]));
+fn commit_message(i: usize) -> String {
+    format!("commit{}", i)
+}
+
+fn do_commits(runner: &Runner, count: usize) {
+    for i in 1..=count {
+        runner.command(
+            "git",
+            &["commit", "-m", &commit_message(i), "--allow-empty"],
+        );
+    }
+}
+
+#[test]
+fn f() {
+    let temp_dir = tempdir().unwrap();
+
+    let in_repo_dir = set_up_repo(&temp_dir);
+    do_commits(&in_repo_dir, 2);
+
+    println!(
+        "{}",
+        in_repo_dir.stdout("git", &["log", "--pretty=format:%s"])
+    );
     println!("{}", in_repo_dir.stdout("git", &["status"]));
 
     temp_dir.close().unwrap();
