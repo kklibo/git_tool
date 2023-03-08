@@ -1,5 +1,6 @@
 //! Tests command line invocation of git.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
 use tempfile::{tempdir, TempDir};
@@ -74,18 +75,45 @@ fn do_commits(runner: &Runner, count: usize) {
     }
 }
 
+/// Parses the output of `git log --pretty=format:%H %s`:
+/// output lines look like
+///
+/// 877d0d9433308ae754eb6bc02c402598994c9ef0 commit_message
+///
+/// Returns a Hashmap of commit_message -> hash.
+fn parse_git_log(s: &str) -> HashMap<String, String> {
+    let mut hash_map = HashMap::new();
+    for line in s.split('\n') {
+        let mut tokens = line.split(' ');
+        let hash = tokens.next().unwrap().to_string();
+        let message = tokens.next().unwrap().to_string();
+        assert!(matches!(tokens.next(), None));
+        assert!(matches!(hash_map.insert(message, hash), None));
+    }
+    hash_map
+}
+
 #[test]
 fn f() {
     let temp_dir = tempdir().unwrap();
 
     let in_repo_dir = set_up_repo(&temp_dir);
-    do_commits(&in_repo_dir, 2);
+    do_commits(&in_repo_dir, 5);
 
     println!(
         "{}",
-        in_repo_dir.stdout("git", &["log", "--pretty=format:%s"])
+        in_repo_dir.stdout("git", &["log", "--pretty=oneline"])
+    );
+    println!(
+        "{}",
+        in_repo_dir.stdout("git", &["log", "--pretty=format:%H %s"])
     );
     println!("{}", in_repo_dir.stdout("git", &["status"]));
+
+    let log_output = in_repo_dir.stdout("git", &["log", "--pretty=format:%H %s"]);
+    let commits = parse_git_log(&log_output);
+
+    dbg!(commits);
 
     temp_dir.close().unwrap();
 }
