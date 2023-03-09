@@ -81,9 +81,9 @@ fn do_commits(runner: &Runner, count: usize) {
 /// 877d0d9433308ae754eb6bc02c402598994c9ef0 commit_message
 ///
 /// Returns a Hashmap of commit_message -> hash.
-fn parse_git_log(s: &str) -> HashMap<String, String> {
+fn parse_git_log(log: &str) -> HashMap<String, String> {
     let mut hash_map = HashMap::new();
-    for line in s.split('\n') {
+    for line in log.split('\n') {
         let mut tokens = line.split(' ');
         let hash = tokens.next().unwrap().to_string();
         let message = tokens.next().unwrap().to_string();
@@ -93,6 +93,19 @@ fn parse_git_log(s: &str) -> HashMap<String, String> {
     hash_map
 }
 
+/// Parses the output of `git log --pretty=format:%s`
+/// (each line is just a commit message) and asserts that
+/// commit messages from `fn commit_message` generated with
+/// `commit_order`'s values match the log.
+fn assert_git_log(log: &str, commit_order: &[usize]) {
+    let lines = log.split("\n").collect::<Vec<_>>();
+    assert_eq!(lines.len(), commit_order.len());
+
+    for (&line, &num) in lines.iter().zip(commit_order.iter()) {
+        assert_eq!(line, commit_message(num));
+    }
+}
+
 #[test]
 fn f() {
     let temp_dir = tempdir().unwrap();
@@ -100,18 +113,27 @@ fn f() {
     let in_repo_dir = set_up_repo(&temp_dir);
     do_commits(&in_repo_dir, 5);
 
-    println!(
-        "{}",
-        in_repo_dir.stdout("git", &["log", "--pretty=oneline"])
-    );
-    println!(
-        "{}",
-        in_repo_dir.stdout("git", &["log", "--pretty=format:%H %s"])
-    );
-    println!("{}", in_repo_dir.stdout("git", &["status"]));
-
     let log_output = in_repo_dir.stdout("git", &["log", "--pretty=format:%H %s"]);
     let commits = parse_git_log(&log_output);
+
+    let parent_hash = commits.get("commit2").unwrap();
+    let section_hash = commits.get("commit4").unwrap();
+
+    in_repo_dir.command_dbg("git", &["branch", "parent", parent_hash]);
+    in_repo_dir.command_dbg("git", &["branch", "section", section_hash]);
+    in_repo_dir.command_dbg("git", &["branch"]);
+
+    let master_log = in_repo_dir.stdout("git", &["log", "master", "--pretty=format:%s"]);
+    let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
+    let section_log = in_repo_dir.stdout("git", &["log", "section", "--pretty=format:%s"]);
+
+    dbg!(&master_log);
+    dbg!(&parent_log);
+    dbg!(&section_log);
+
+    assert_git_log(&master_log, &[5, 4, 3, 2, 1]);
+    assert_git_log(&parent_log, &[2, 1]);
+    assert_git_log(&section_log, &[4, 3, 2, 1]);
 
     dbg!(commits);
 
