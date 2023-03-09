@@ -1,43 +1,10 @@
 //! Tests command line invocation of git.
 
-mod common;
-
-use crate::common::Runner;
-use common::{do_commits, match_git_log, parse_git_log, set_up_repo};
+use crate::common::{do_commits, match_git_log, parse_git_log, set_up_repo};
 use std::path::PathBuf;
 use tempfile::tempdir;
 
-#[test]
-fn f1() {
-    test_history_subset_squash(run);
-}
-
-fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message: &str) {
-    let in_repo_dir = Runner::new(repo_dir);
-
-    in_repo_dir.command("git", &["branch", "parent", parent_hash]);
-    in_repo_dir.command("git", &["branch", "section", section_hash]);
-    in_repo_dir.command("git", &["branch"]);
-
-    let master_log = in_repo_dir.stdout("git", &["log", "master", "--pretty=format:%s"]);
-    let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
-    let section_log = in_repo_dir.stdout("git", &["log", "section", "--pretty=format:%s"]);
-
-    assert!(match_git_log(&master_log, &[5, 4, 3, 2, 1]));
-    assert!(match_git_log(&parent_log, &[2, 1]));
-    assert!(match_git_log(&section_log, &[4, 3, 2, 1]));
-
-    in_repo_dir.command("git", &["checkout", "parent"]);
-    in_repo_dir.command("git", &["merge", "--squash", "--no-commit", "section"]);
-    in_repo_dir.command("git", &["commit", "-m", commit_message, "--allow-empty"]);
-    assert!(in_repo_dir
-        .stdout("git", &["diff", "parent", "section"])
-        .is_empty());
-
-    in_repo_dir.command("git", &["rebase", "--onto", "parent", "section", "master"]);
-}
-
-fn test_history_subset_squash<T>(f: T)
+pub fn test_history_subset_squash<T>(f: T)
 where
     T: Fn(PathBuf, &str, &str, &str),
 {
@@ -59,28 +26,6 @@ where
         "commit6",
     );
 
-    /*
-    in_repo_dir.command("git", &["branch", "parent", parent_hash]);
-    in_repo_dir.command("git", &["branch", "section", section_hash]);
-    in_repo_dir.command("git", &["branch"]);
-
-    let master_log = in_repo_dir.stdout("git", &["log", "master", "--pretty=format:%s"]);
-    let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
-    let section_log = in_repo_dir.stdout("git", &["log", "section", "--pretty=format:%s"]);
-
-    assert!(match_git_log(&master_log, &[5, 4, 3, 2, 1]));
-    assert!(match_git_log(&parent_log, &[2, 1]));
-    assert!(match_git_log(&section_log, &[4, 3, 2, 1]));
-
-    in_repo_dir.command("git", &["checkout", "parent"]);
-    in_repo_dir.command("git", &["merge", "--squash", "--no-commit", "section"]);
-    in_repo_dir.command("git", &["commit", "-m", "commit6", "--allow-empty"]);
-    assert!(in_repo_dir
-        .stdout("git", &["diff", "parent", "section"])
-        .is_empty());
-
-    in_repo_dir.command("git", &["rebase", "--onto", "parent", "section", "master"]);
-    */
     let master_log = in_repo_dir.stdout("git", &["log", "master", "--pretty=format:%s"]);
     let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
     let section_log = in_repo_dir.stdout("git", &["log", "section", "--pretty=format:%s"]);
