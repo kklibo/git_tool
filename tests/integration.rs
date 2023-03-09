@@ -1,9 +1,9 @@
 //! Tests command line invocation of git.
 
-mod common;
+mod src;
 
 use assert_cmd::prelude::*;
-use common::{do_commits, match_git_log, parse_git_log, set_up_repo};
+use src::common::{do_commits, match_git_log, parse_git_log, set_up_repo};
 use std::process::Command;
 use tempfile::tempdir;
 

@@ -1,6 +1,6 @@
 //! Tests command line invocation of git.
 
-use crate::common::{do_commits, match_git_log, parse_git_log, set_up_repo};
+use crate::src::common::{do_commits, match_git_log, parse_git_log, set_up_repo};
 use std::path::PathBuf;
 use tempfile::tempdir;
 

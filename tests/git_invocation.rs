@@ -1,9 +1,9 @@
 //! Tests command line invocation of git.
 
-mod common;
-mod fixtures;
+mod src;
 
-use crate::common::{match_git_log, Runner};
+use src::common::{match_git_log, Runner};
+use src::fixtures;
 use std::path::PathBuf;
 
 fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message: &str) {
