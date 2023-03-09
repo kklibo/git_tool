@@ -84,6 +84,10 @@ fn do_commits(runner: &Runner, count: usize) {
 fn parse_git_log(log: &str) -> HashMap<String, String> {
     let mut hash_map = HashMap::new();
     for line in log.split('\n') {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
         let mut tokens = line.split(' ');
         let hash = tokens.next().unwrap().to_string();
         let message = tokens.next().unwrap().to_string();
@@ -94,16 +98,24 @@ fn parse_git_log(log: &str) -> HashMap<String, String> {
 }
 
 /// Parses the output of `git log --pretty=format:%s`
-/// (each line is just a commit message) and asserts that
+/// (each line is just a commit message) and checks that
 /// commit messages from `fn commit_message` generated with
 /// `commit_order`'s values match the log.
-fn assert_git_log(log: &str, commit_order: &[usize]) {
-    let lines = log.split("\n").collect::<Vec<_>>();
-    assert_eq!(lines.len(), commit_order.len());
+fn match_git_log(log: &str, commit_order: &[usize]) -> bool {
+    let lines = log
+        .split("\n")
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>();
 
-    for (&line, &num) in lines.iter().zip(commit_order.iter()) {
-        assert_eq!(line, commit_message(num));
+    if lines.len() != commit_order.len() {
+        return false;
     }
+    for (&line, &num) in lines.iter().zip(commit_order.iter()) {
+        if line != commit_message(num) {
+            return false;
+        }
+    }
+    true
 }
 
 #[test]
@@ -127,30 +139,62 @@ fn test_history_subset_squash() {
     let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
     let section_log = in_repo_dir.stdout("git", &["log", "section", "--pretty=format:%s"]);
 
-    assert_git_log(&master_log, &[5, 4, 3, 2, 1]);
-    assert_git_log(&parent_log, &[2, 1]);
-    assert_git_log(&section_log, &[4, 3, 2, 1]);
+    assert!(match_git_log(&master_log, &[5, 4, 3, 2, 1]));
+    assert!(match_git_log(&parent_log, &[2, 1]));
+    assert!(match_git_log(&section_log, &[4, 3, 2, 1]));
 
-    in_repo_dir.command_dbg("git", &["checkout", "parent"]);
-    in_repo_dir.command_dbg("git", &["merge", "--squash", "--no-commit", "section"]);
-    in_repo_dir.command_dbg("git", &["commit", "-m", "commit6", "--allow-empty"]);
+    in_repo_dir.command("git", &["checkout", "parent"]);
+    in_repo_dir.command("git", &["merge", "--squash", "--no-commit", "section"]);
+    in_repo_dir.command("git", &["commit", "-m", "commit6", "--allow-empty"]);
     assert!(in_repo_dir
         .stdout("git", &["diff", "parent", "section"])
         .is_empty());
 
-    in_repo_dir.command_dbg("git", &["rebase", "--onto", "parent", "section", "master"]);
+    in_repo_dir.command("git", &["rebase", "--onto", "parent", "section", "master"]);
 
     let master_log = in_repo_dir.stdout("git", &["log", "master", "--pretty=format:%s"]);
     let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
     let section_log = in_repo_dir.stdout("git", &["log", "section", "--pretty=format:%s"]);
 
-    dbg!(&master_log);
-    dbg!(&parent_log);
-    dbg!(&section_log);
-
-    assert_git_log(&master_log, &[5, 6, 2, 1]);
-    assert_git_log(&parent_log, &[6, 2, 1]);
-    assert_git_log(&section_log, &[4, 3, 2, 1]);
+    assert!(match_git_log(&master_log, &[5, 6, 2, 1]));
+    assert!(match_git_log(&parent_log, &[6, 2, 1]));
+    assert!(match_git_log(&section_log, &[4, 3, 2, 1]));
 
     temp_dir.close().unwrap();
+}
+
+#[test]
+fn test_parse_git_log() {
+    assert!(parse_git_log("").is_empty());
+
+    let log = r#"
+0a07879c0e13ef54f93a0eec2c377d3d3bbe9641 commit5
+61dbfae34e916fb710117c4c3064882dcfdc6701 commit4
+
+71511da451154936a64e0e881d3f680f6d056b44 commit3
+27ed74c41300b1df1009b66c315120b0d53085e6 commit2
+59b9b1f2cd435f5d5cbc32da91c60a159591886b commit1"#;
+    let hash_map = parse_git_log(log);
+    assert_eq!(hash_map.len(), 5);
+}
+
+#[test]
+fn test_match_git_log() {
+    assert!(match_git_log("", &[]));
+    assert!(!match_git_log("", &[1]));
+    assert!(!match_git_log("commit1", &[]));
+    assert!(!match_git_log("commit1", &[2]));
+    assert!(match_git_log("commit1", &[1]));
+
+    let log = r#"
+commit5
+commit4
+
+commit3
+commit2
+commit1"#;
+    assert!(match_git_log(log, &[5, 4, 3, 2, 1]));
+    assert!(!match_git_log(log, &[4, 3, 2, 1]));
+    assert!(!match_git_log(log, &[6, 5, 4, 3, 2, 1]));
+    assert!(!match_git_log(log, &[5, 4, 3, 2, 6]));
 }
