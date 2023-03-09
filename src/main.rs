@@ -1,3 +1,13 @@
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+struct Args {
+    parent_hash: String,
+    section_hash: String,
+    commit_message: String,
+}
+
 fn main() {
-    println!("Hello, world!");
+    let args = Args::parse();
+    dbg!(args);
 }
