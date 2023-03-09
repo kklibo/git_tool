@@ -6,7 +6,7 @@ use std::process::Command;
 use tempfile::TempDir;
 
 pub struct Runner {
-    dir: PathBuf,
+    pub dir: PathBuf,
 }
 
 impl Runner {
