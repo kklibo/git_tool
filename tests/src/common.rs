@@ -118,6 +118,11 @@ pub fn match_git_log(log: &str, commit_order: &[usize]) -> bool {
     true
 }
 
+pub fn match_branch_history(runner: &Runner, branch_name: &str, commit_order: &[usize]) -> bool {
+    let log = runner.stdout("git", &["log", branch_name, "--pretty=format:%s"]);
+    match_git_log(&log, commit_order)
+}
+
 #[test]
 fn test_parse_git_log() {
     assert!(parse_git_log("").is_empty());

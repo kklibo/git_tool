@@ -2,7 +2,7 @@
 
 mod src;
 
-use src::common::{match_git_log, Runner};
+use src::common::{match_branch_history, Runner};
 use src::fixtures;
 use std::path::PathBuf;
 
@@ -12,13 +12,14 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
     in_repo_dir.command("git", &["branch", "parent", parent_hash]);
     in_repo_dir.command("git", &["branch", "section", section_hash]);
 
-    let master_log = in_repo_dir.stdout("git", &["log", "master", "--pretty=format:%s"]);
-    let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
-    let section_log = in_repo_dir.stdout("git", &["log", "section", "--pretty=format:%s"]);
-
-    assert!(match_git_log(&master_log, &[5, 4, 3, 2, 1]));
-    assert!(match_git_log(&parent_log, &[2, 1]));
-    assert!(match_git_log(&section_log, &[4, 3, 2, 1]));
+    // Test: confirm expected branch history
+    assert!(match_branch_history(
+        &in_repo_dir,
+        "master",
+        &[5, 4, 3, 2, 1]
+    ));
+    assert!(match_branch_history(&in_repo_dir, "parent", &[2, 1]));
+    assert!(match_branch_history(&in_repo_dir, "section", &[4, 3, 2, 1]));
 
     in_repo_dir.command("git", &["checkout", "parent"]);
     in_repo_dir.command("git", &["merge", "--squash", "--no-commit", "section"]);
