@@ -1,5 +1,3 @@
-//! Tests command line invocation of git.
-
 mod src;
 
 use assert_cmd::prelude::*;

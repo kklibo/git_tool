@@ -1,4 +1,4 @@
-//! Tests command line invocation of git.
+//! Tests equivalent functionality through command line git invocation.
 
 mod src;
 
@@ -11,7 +11,6 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
 
     in_repo_dir.command("git", &["branch", "parent", parent_hash]);
     in_repo_dir.command("git", &["branch", "section", section_hash]);
-    in_repo_dir.command("git", &["branch"]);
 
     let master_log = in_repo_dir.stdout("git", &["log", "master", "--pretty=format:%s"]);
     let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
