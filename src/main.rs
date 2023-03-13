@@ -8,6 +8,17 @@ struct Args {
     commit_message: String,
 }
 
+/// Runs `git` with space-separated arguments from macro inputs.
+macro_rules! git {
+    ($($e:expr),+ $(,)?) => {
+        {
+            let mut v = vec![];
+            $(v.extend($e.split(" "));)+
+            run("git", &v)
+        }
+    };
+}
+
 pub fn run(bin: &str, args: &[&str]) -> Output {
     Command::new(bin).args(args).output().unwrap()
 }
@@ -17,18 +28,15 @@ fn main() {
     dbg!(&args);
 
     run("which", &["git"]);
-    run("git", &["branch", "parent", &args.parent_hash]);
-    run("git", &["branch", "section", &args.section_hash]);
+    git!("branch parent", &args.parent_hash);
+    git!("branch section", &args.section_hash);
 
-    run("git", &["checkout", "parent"]);
-    run("git", &["merge", "--squash", "--no-commit", "section"]);
-    run(
-        "git",
-        &["commit", "-m", &args.commit_message, "--allow-empty"],
-    );
+    git!("checkout parent");
+    git!("merge --squash --no-commit section");
+    git!("commit -m", &args.commit_message, "--allow-empty");
 
-    let diff = run("git", &["diff", "parent", "section"]);
+    let diff = git!("diff parent section");
     assert!(diff.stdout.is_empty());
 
-    run("git", &["rebase", "--onto", "parent", "section", "master"]);
+    git!("rebase --onto parent section master");
 }
