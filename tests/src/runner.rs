@@ -10,9 +10,10 @@ impl Runner {
         Self { dir }
     }
     /// Run a command and assert success.
-    pub fn command(&self, bin: &str, args: &[&str]) {
-        assert!(Command::new(bin)
-            .args(args)
+    /// `args` contains the command to run, followed by 0 or more arguments.
+    pub fn command(&self, args: &[&str]) {
+        assert!(Command::new(args.first().unwrap())
+            .args(args.iter().skip(1))
             .current_dir(&self.dir)
             .output()
             .unwrap()
@@ -21,9 +22,9 @@ impl Runner {
     }
 
     #[allow(dead_code)]
-    pub fn command_dbg(&self, bin: &str, args: &[&str]) {
-        assert!(dbg!(Command::new(bin)
-            .args(args)
+    pub fn command_dbg(&self, args: &[&str]) {
+        assert!(dbg!(Command::new(args.first().unwrap())
+            .args(args.iter().skip(1))
             .current_dir(&self.dir)
             .output()
             .unwrap())

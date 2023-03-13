@@ -22,11 +22,11 @@ pub fn set_up_repo(temp_dir: &TempDir) -> Runner {
     let in_temp_dir = Runner::new(temp_dir.path().to_path_buf());
     let in_repo_dir = Runner::new(repo_dir_path);
 
-    in_temp_dir.command("which", &args!("git"));
-    in_temp_dir.command("git", &args!("init", REPO_NAME));
-    in_repo_dir.command("git", &args!("status"));
-    in_repo_dir.command("git", &args!("config user.email test@test"));
-    in_repo_dir.command("git", &args!("config user.name test"));
+    in_temp_dir.command(&args!("which git"));
+    in_temp_dir.command(&args!("git init", REPO_NAME));
+    in_repo_dir.command(&args!("git status"));
+    in_repo_dir.command(&args!("git config user.email test@test"));
+    in_repo_dir.command(&args!("git config user.name test"));
 
     in_repo_dir
 }
@@ -38,7 +38,7 @@ fn commit_message(i: usize) -> String {
 pub fn do_commits(runner: &Runner, count: usize) {
     for i in 1..=count {
         let message = commit_message(i);
-        runner.command("git", &args!("commit -m", &message, "--allow-empty"));
+        runner.command(&args!("git commit -m", &message, "--allow-empty"));
     }
 }
 
