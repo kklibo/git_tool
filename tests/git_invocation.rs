@@ -2,8 +2,9 @@
 
 mod src;
 
-use src::common::{match_branch_history, Runner};
+use src::common::match_branch_history;
 use src::fixtures;
+use src::runner::Runner;
 use std::path::PathBuf;
 
 fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message: &str) {
