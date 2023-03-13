@@ -4,6 +4,16 @@ use super::runner::Runner;
 use std::collections::HashMap;
 use tempfile::TempDir;
 
+/// Space-separated arguments from macro inputs.
+#[macro_export]
+macro_rules! args {
+    ($($e:expr),+ $(,)?) => {{
+        let mut v = vec![];
+        $(v.extend($e.split(" "));)+
+        v
+    }};
+}
+
 /// Sets up a git repo for testing; returns a Runner targeting the repo dir.
 pub fn set_up_repo(temp_dir: &TempDir) -> Runner {
     const REPO_NAME: &str = "test_repo";
@@ -12,11 +22,11 @@ pub fn set_up_repo(temp_dir: &TempDir) -> Runner {
     let in_temp_dir = Runner::new(temp_dir.path().to_path_buf());
     let in_repo_dir = Runner::new(repo_dir_path);
 
-    in_temp_dir.command("which", &["git"]);
-    in_temp_dir.command("git", &["init", REPO_NAME]);
-    in_repo_dir.command("git", &["status"]);
-    in_repo_dir.command("git", &["config", "user.email", "test@test"]);
-    in_repo_dir.command("git", &["config", "user.name", "test"]);
+    in_temp_dir.command("which", &args!("git"));
+    in_temp_dir.command("git", &args!("init", REPO_NAME));
+    in_repo_dir.command("git", &args!("status"));
+    in_repo_dir.command("git", &args!("config user.email test@test"));
+    in_repo_dir.command("git", &args!("config user.name test"));
 
     in_repo_dir
 }
@@ -27,10 +37,8 @@ fn commit_message(i: usize) -> String {
 
 pub fn do_commits(runner: &Runner, count: usize) {
     for i in 1..=count {
-        runner.command(
-            "git",
-            &["commit", "-m", &commit_message(i), "--allow-empty"],
-        );
+        let message = commit_message(i);
+        runner.command("git", &args!("commit -m", &message, "--allow-empty"));
     }
 }
 
@@ -78,7 +86,7 @@ pub fn match_git_log(log: &str, commit_order: &[usize]) -> bool {
 }
 
 pub fn match_branch_history(runner: &Runner, branch_name: &str, commit_order: &[usize]) -> bool {
-    let log = runner.stdout("git", &["log", branch_name, "--pretty=format:%s"]);
+    let log = runner.stdout("git", &args!("log", branch_name, "--pretty=format:%s"));
     match_git_log(&log, commit_order)
 }
 
