@@ -13,7 +13,7 @@ where
     let in_repo_dir = set_up_repo(&temp_dir);
     do_commits(&in_repo_dir, 5);
 
-    let log_output = in_repo_dir.stdout("git", &["log", "--pretty=format:%H %s"]);
+    let log_output = in_repo_dir.stdout(&["git", "log", "--pretty=format:%H %s"]);
     let commits = parse_git_log(&log_output);
 
     let parent_hash = commits.get("commit2").unwrap();

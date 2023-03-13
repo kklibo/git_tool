@@ -86,7 +86,7 @@ pub fn match_git_log(log: &str, commit_order: &[usize]) -> bool {
 }
 
 pub fn match_branch_history(runner: &Runner, branch_name: &str, commit_order: &[usize]) -> bool {
-    let log = runner.stdout("git", &args!("log", branch_name, "--pretty=format:%s"));
+    let log = runner.stdout(&args!("git log", branch_name, "--pretty=format:%s"));
     match_git_log(&log, commit_order)
 }
 

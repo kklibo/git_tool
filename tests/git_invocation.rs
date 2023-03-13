@@ -26,7 +26,7 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
     in_repo_dir.command(&["git", "merge", "--squash", "--no-commit", "section"]);
     in_repo_dir.command(&["git", "commit", "-m", commit_message, "--allow-empty"]);
     assert!(in_repo_dir
-        .stdout("git", &["diff", "parent", "section"])
+        .stdout(&["git", "diff", "parent", "section"])
         .is_empty());
 
     in_repo_dir.command(&["git", "rebase", "--onto", "parent", "section", "master"]);

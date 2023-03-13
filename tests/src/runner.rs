@@ -32,9 +32,9 @@ impl Runner {
         .success());
     }
 
-    pub fn stdout(&self, bin: &str, args: &[&str]) -> String {
-        let a = Command::new(bin)
-            .args(args)
+    pub fn stdout(&self, args: &[&str]) -> String {
+        let a = Command::new(args.first().unwrap())
+            .args(args.iter().skip(1))
             .current_dir(&self.dir)
             .output()
             .unwrap();
