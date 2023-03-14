@@ -2,32 +2,34 @@
 
 mod src;
 
-use src::common::{match_git_log, Runner};
+use src::common::match_branch_history;
 use src::fixtures;
+use src::runner::Runner;
 use std::path::PathBuf;
 
 fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message: &str) {
     let in_repo_dir = Runner::new(repo_dir);
 
-    in_repo_dir.command("git", &["branch", "parent", parent_hash]);
-    in_repo_dir.command("git", &["branch", "section", section_hash]);
+    in_repo_dir.command(&args!["git branch parent", parent_hash]);
+    in_repo_dir.command(&args!["git branch section", section_hash]);
 
-    let master_log = in_repo_dir.stdout("git", &["log", "master", "--pretty=format:%s"]);
-    let parent_log = in_repo_dir.stdout("git", &["log", "parent", "--pretty=format:%s"]);
-    let section_log = in_repo_dir.stdout("git", &["log", "section", "--pretty=format:%s"]);
+    // Test: confirm expected branch history
+    assert!(match_branch_history(
+        &in_repo_dir,
+        "master",
+        &[5, 4, 3, 2, 1]
+    ));
+    assert!(match_branch_history(&in_repo_dir, "parent", &[2, 1]));
+    assert!(match_branch_history(&in_repo_dir, "section", &[4, 3, 2, 1]));
 
-    assert!(match_git_log(&master_log, &[5, 4, 3, 2, 1]));
-    assert!(match_git_log(&parent_log, &[2, 1]));
-    assert!(match_git_log(&section_log, &[4, 3, 2, 1]));
+    in_repo_dir.command(&args!["git checkout parent"]);
+    in_repo_dir.command(&args!["git merge --squash --no-commit section"]);
+    in_repo_dir.command(&args!["git commit -m", commit_message, "--allow-empty"]);
 
-    in_repo_dir.command("git", &["checkout", "parent"]);
-    in_repo_dir.command("git", &["merge", "--squash", "--no-commit", "section"]);
-    in_repo_dir.command("git", &["commit", "-m", commit_message, "--allow-empty"]);
-    assert!(in_repo_dir
-        .stdout("git", &["diff", "parent", "section"])
-        .is_empty());
+    let diff = in_repo_dir.stdout(&args!["git diff parent section"]);
+    assert!(diff.is_empty());
 
-    in_repo_dir.command("git", &["rebase", "--onto", "parent", "section", "master"]);
+    in_repo_dir.command(&args!["git rebase --onto parent section master"]);
 }
 
 #[test]
