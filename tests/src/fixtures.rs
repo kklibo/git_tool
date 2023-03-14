@@ -1,5 +1,6 @@
 //! Tests command line invocation of git.
 
+use crate::args;
 use crate::src::common::{do_commits, match_branch_history, parse_git_log, set_up_repo};
 use std::path::PathBuf;
 use tempfile::tempdir;
@@ -13,7 +14,7 @@ where
     let in_repo_dir = set_up_repo(&temp_dir);
     do_commits(&in_repo_dir, 5);
 
-    let log_output = in_repo_dir.stdout(&["git", "log", "--pretty=format:%H %s"]);
+    let log_output = in_repo_dir.stdout(&args!["git log --pretty=format:%H\\ %s"]);
     let commits = parse_git_log(&log_output);
 
     let parent_hash = commits.get("commit2").unwrap();

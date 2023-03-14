@@ -4,12 +4,12 @@ use super::runner::Runner;
 use std::collections::HashMap;
 use tempfile::TempDir;
 
-/// Space-separated arguments from macro inputs.
+/// Command-line arguments from macro inputs.
 #[macro_export]
 macro_rules! args {
     ($($e:expr),+ $(,)?) => {{
         let mut v = vec![];
-        $(v.extend($e.split(" "));)+
+        $(v.append(&mut shlex::split($e).unwrap());)+
         v
     }};
 }
