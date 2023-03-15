@@ -43,4 +43,9 @@ fn main() {
     assert!(diff.stdout.is_empty());
 
     git!("rebase --onto parent section master");
+
+    let parent_short_hash = git!("show parent --format=%h");
+    let parent_short_hash = String::from_utf8(parent_short_hash.stdout).unwrap();
+    let tag_name = format!("archive/{}", parent_short_hash.trim());
+    git!("tag", &tag_name, "section");
 }
