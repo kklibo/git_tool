@@ -14,6 +14,9 @@ where
     let in_repo_dir = set_up_repo(&temp_dir);
     do_commits(&in_repo_dir, 5);
 
+    let target_branch = "target";
+    in_repo_dir.command(&args!["git checkout -b", target_branch]);
+
     let log_output = in_repo_dir.stdout(&args!["git log --pretty=format:%H\\ %s"]);
     let commits = parse_git_log(&log_output);
 
@@ -27,7 +30,11 @@ where
         "commit6",
     );
 
-    assert!(match_branch_history(&in_repo_dir, "master", &[5, 6, 2, 1]));
+    assert!(match_branch_history(
+        &in_repo_dir,
+        target_branch,
+        &[5, 6, 2, 1]
+    ));
     assert!(match_branch_history(&in_repo_dir, "parent", &[6, 2, 1]));
     assert!(match_branch_history(&in_repo_dir, "section", &[4, 3, 2, 1]));
 
