@@ -20,7 +20,11 @@ macro_rules! git {
 }
 
 pub fn run(bin: &str, args: &[&str]) -> Output {
-    Command::new(bin).args(args).output().unwrap()
+    let output = Command::new(bin).args(args).output().unwrap();
+    if !output.status.success() {
+        panic!("non-zero exit status from: {} {}", bin, args.join(" "));
+    }
+    output
 }
 
 fn main() {
