@@ -40,6 +40,8 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
 
     // This should be redundant: the `rebase --onto` operation should do this.
     in_repo_dir.command(&args!["git checkout", target_branch]);
+
+    in_repo_dir.command(&args!["git branch --delete --force parent section"]);
 }
 
 #[test]

@@ -35,16 +35,18 @@ where
         target_branch,
         &[5, 6, 2, 1]
     ));
-    assert!(match_branch_history(&in_repo_dir, "parent", &[6, 2, 1]));
-    assert!(match_branch_history(&in_repo_dir, "section", &[4, 3, 2, 1]));
 
     // Confirm section tag
-    let parent_short_hash = in_repo_dir.stdout(&args!["git show parent --format=%h"]);
+    let parent_short_hash = in_repo_dir.stdout(&args!["git show HEAD~1 --format=%h"]);
     let tag_name = format!("archive/{}", parent_short_hash.trim());
     assert_eq!(
         in_repo_dir.stdout(&args!["git tag -l", &tag_name]).trim(),
         tag_name
     );
+    assert!(match_branch_history(&in_repo_dir, &tag_name, &[4, 3, 2, 1]));
+
+    let branches = in_repo_dir.stdout(&args!["git branch --list parent section"]);
+    assert!(branches.is_empty());
 
     temp_dir.close().unwrap();
 }

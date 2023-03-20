@@ -53,4 +53,5 @@ fn main() {
     git!("tag", &tag_name, "section");
 
     git!("checkout", target_branch);
+    git!("branch --delete --force parent section");
 }
