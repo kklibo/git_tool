@@ -20,7 +20,11 @@ macro_rules! git {
 }
 
 pub fn run(bin: &str, args: &[&str]) -> Output {
-    Command::new(bin).args(args).output().unwrap()
+    let output = Command::new(bin).args(args).output().unwrap();
+    if !output.status.success() {
+        panic!("non-zero exit status from: {} {}", bin, args.join(" "));
+    }
+    output
 }
 
 fn main() {
@@ -28,6 +32,9 @@ fn main() {
     dbg!(&args);
 
     run("which", &["git"]);
+    let target_branch = git!("branch --show-current");
+    let target_branch = String::from_utf8(target_branch.stdout).unwrap();
+    let target_branch = target_branch.trim();
     git!("branch parent", &args.parent_hash);
     git!("branch section", &args.section_hash);
 
@@ -38,5 +45,13 @@ fn main() {
     let diff = git!("diff parent section");
     assert!(diff.stdout.is_empty());
 
-    git!("rebase --onto parent section master");
+    git!("rebase --onto parent section", target_branch);
+
+    let parent_short_hash = git!("show parent --format=%h --no-patch");
+    let parent_short_hash = String::from_utf8(parent_short_hash.stdout).unwrap();
+    let tag_name = format!("archive/{}", parent_short_hash.trim());
+    git!("tag", &tag_name, "section");
+
+    git!("checkout", target_branch);
+    git!("branch --delete --force parent section");
 }
