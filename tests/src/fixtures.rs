@@ -37,7 +37,7 @@ where
     ));
 
     // Confirm section tag
-    let parent_short_hash = in_repo_dir.stdout(&args!["git show HEAD~1 --format=%h"]);
+    let parent_short_hash = in_repo_dir.stdout(&args!["git show HEAD~1 --format=%h --no-patch"]);
     let tag_name = format!("archive/{}", parent_short_hash.trim());
     assert_eq!(
         in_repo_dir.stdout(&args!["git tag -l", &tag_name]).trim(),

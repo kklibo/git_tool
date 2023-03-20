@@ -47,7 +47,7 @@ fn main() {
 
     git!("rebase --onto parent section", target_branch);
 
-    let parent_short_hash = git!("show parent --format=%h");
+    let parent_short_hash = git!("show parent --format=%h --no-patch");
     let parent_short_hash = String::from_utf8(parent_short_hash.stdout).unwrap();
     let tag_name = format!("archive/{}", parent_short_hash.trim());
     git!("tag", &tag_name, "section");

@@ -34,7 +34,7 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
 
     in_repo_dir.command(&args!["git rebase --onto parent section", target_branch]);
 
-    let parent_short_hash = in_repo_dir.stdout(&args!["git show parent --format=%h"]);
+    let parent_short_hash = in_repo_dir.stdout(&args!["git show parent --format=%h --no-patch"]);
     let tag_name = format!("archive/{}", parent_short_hash.trim());
     in_repo_dir.command(&args!["git tag ", &tag_name, "section"]);
 
