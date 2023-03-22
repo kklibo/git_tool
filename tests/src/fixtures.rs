@@ -9,11 +9,24 @@ pub fn test_history_subset_squash<T>(to_test: T)
 where
     T: Fn(PathBuf, &str, &str, &str),
 {
-    test_base(to_test, "commit2", "commit4", "commit6");
+    test_base(
+        to_test,
+        "commit2",
+        "commit4",
+        "commit6",
+        &[5, 6, 2, 1],
+        &[4, 3, 2, 1],
+    );
 }
 
-pub fn test_base<T>(f: T, parent_msg: &str, section_msg: &str, commit_message: &str)
-where
+pub fn test_base<T>(
+    f: T,
+    parent_msg: &str,
+    section_msg: &str,
+    commit_message: &str,
+    branch_history: &[usize],
+    tag_history: &[usize],
+) where
     T: Fn(PathBuf, &str, &str, &str),
 {
     let temp_dir = tempdir().unwrap();
@@ -40,10 +53,10 @@ where
     assert!(match_branch_history(
         &in_repo_dir,
         target_branch,
-        &[5, 6, 2, 1]
+        branch_history
     ));
 
-    // Confirm archive tag
+    // Confirm archive tag + history
     let log_output =
         in_repo_dir.stdout(&args!["git log", target_branch, " --pretty=format:%h\\ %s"]);
     let commits = parse_git_log(&log_output);
@@ -53,8 +66,9 @@ where
         in_repo_dir.stdout(&args!["git tag -l", &tag_name]).trim(),
         tag_name
     );
-    assert!(match_branch_history(&in_repo_dir, &tag_name, &[4, 3, 2, 1]));
+    assert!(match_branch_history(&in_repo_dir, &tag_name, tag_history));
 
+    // Confirm temp working branches have been deleted
     let branches = in_repo_dir.stdout(&args!["git branch --list parent section"]);
     assert!(branches.is_empty());
 
