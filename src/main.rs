@@ -8,6 +8,9 @@ struct Args {
     parent_hash: String,
     section_hash: String,
     commit_message: String,
+    #[arg(short, long)]
+    /// Show log on success
+    verbose: bool,
 }
 
 /// Runs `git` with space-separated arguments from macro inputs.
@@ -93,5 +96,7 @@ fn main() {
     git!("branch --delete --force parent section");
 
     info!("OK");
-    print!("{}", LOGGER.get());
+    if args.verbose {
+        print!("{}", LOGGER.get());
+    }
 }
