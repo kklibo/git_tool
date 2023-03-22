@@ -12,6 +12,9 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
         .args(&[parent_hash, section_hash, commit_message])
         .output()
         .unwrap();
+
+    dbg!(&_output);
+    println!("{}", String::from_utf8(_output.stdout).unwrap());
 }
 
 #[test]

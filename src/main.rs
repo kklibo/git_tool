@@ -1,5 +1,7 @@
 use clap::Parser;
+use log::{error, info, LevelFilter, Log, Metadata, Record};
 use std::process::{Command, Output};
+use std::sync::Mutex;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -27,9 +29,42 @@ pub fn run(bin: &str, args: &[&str]) -> Output {
     output
 }
 
+struct StringLogger {
+    s: Mutex<String>,
+}
+impl StringLogger {
+    const fn new() -> Self {
+        Self {
+            s: Mutex::new(String::new()),
+        }
+    }
+    fn get(&self) -> String {
+        let a = self.s.lock().unwrap();
+        a.clone()
+    }
+}
+impl Log for StringLogger {
+    fn enabled(&self, _metadata: &Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &Record) {
+        let mut a = self.s.lock().unwrap();
+        a.push_str(&format!("{} - {}\n", record.level(), record.args()));
+    }
+
+    fn flush(&self) {}
+}
+
+static LOGGER: StringLogger = StringLogger::new();
 fn main() {
     let args = Args::parse();
-    dbg!(&args);
+
+    log::set_logger(&LOGGER).unwrap();
+    log::set_max_level(LevelFilter::Info);
+
+    info!("test");
+    error!("test");
 
     run("which", &["git"]);
     let target_branch = git!("branch --show-current");
@@ -54,4 +89,6 @@ fn main() {
 
     git!("checkout", target_branch);
     git!("branch --delete --force parent section");
+
+    print!("{}", LOGGER.get());
 }
