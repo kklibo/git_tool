@@ -9,9 +9,12 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
     let _output = Command::cargo_bin(env!("CARGO_PKG_NAME"))
         .unwrap()
         .current_dir(repo_dir)
-        .args(&[parent_hash, section_hash, commit_message])
+        .args(&[parent_hash, section_hash, commit_message, "--verbose"])
         .output()
         .unwrap();
+
+    dbg!(&_output);
+    println!("{}", String::from_utf8(_output.stdout).unwrap());
 }
 
 #[test]
