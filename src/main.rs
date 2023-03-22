@@ -22,9 +22,14 @@ macro_rules! git {
 }
 
 pub fn run(bin: &str, args: &[&str]) -> Output {
+    info!("running: \"{bin} {}\"", args.join(" "));
     let output = Command::new(bin).args(args).output().unwrap();
     if !output.status.success() {
-        panic!("non-zero exit status from: {} {}", bin, args.join(" "));
+        error!("{} from: \"{} {}\"", output.status, bin, args.join(" "));
+        info!("exiting: exit status 1");
+        eprintln!("FAILED, dumping log:");
+        eprint!("{}", LOGGER.get());
+        std::process::exit(1);
     }
     output
 }
@@ -63,9 +68,6 @@ fn main() {
     log::set_logger(&LOGGER).unwrap();
     log::set_max_level(LevelFilter::Info);
 
-    info!("test");
-    error!("test");
-
     run("which", &["git"]);
     let target_branch = git!("branch --show-current");
     let target_branch = String::from_utf8(target_branch.stdout).unwrap();
@@ -90,5 +92,6 @@ fn main() {
     git!("checkout", target_branch);
     git!("branch --delete --force parent section");
 
+    info!("OK");
     print!("{}", LOGGER.get());
 }
