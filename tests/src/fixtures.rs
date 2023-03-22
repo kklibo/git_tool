@@ -5,7 +5,14 @@ use crate::src::common::{do_commits, match_branch_history, parse_git_log, set_up
 use std::path::PathBuf;
 use tempfile::tempdir;
 
-pub fn test_history_subset_squash<T>(f: T)
+pub fn test_history_subset_squash<T>(to_test: T)
+where
+    T: Fn(PathBuf, &str, &str, &str),
+{
+    test_base(to_test, "commit2", "commit4", "commit6");
+}
+
+pub fn test_base<T>(f: T, parent_msg: &str, section_msg: &str, commit_message: &str)
 where
     T: Fn(PathBuf, &str, &str, &str),
 {
@@ -20,14 +27,14 @@ where
     let log_output = in_repo_dir.stdout(&args!["git log --pretty=format:%H\\ %s"]);
     let commits = parse_git_log(&log_output);
 
-    let parent_hash = commits.get("commit2").unwrap();
-    let section_hash = commits.get("commit4").unwrap();
+    let parent_hash = commits.get(parent_msg).unwrap();
+    let section_hash = commits.get(section_msg).unwrap();
 
     f(
         in_repo_dir.dir.clone(),
         parent_hash,
         section_hash,
-        "commit6",
+        commit_message,
     );
 
     assert!(match_branch_history(
@@ -36,9 +43,12 @@ where
         &[5, 6, 2, 1]
     ));
 
-    // Confirm section tag
-    let parent_short_hash = in_repo_dir.stdout(&args!["git show HEAD~1 --format=%h --no-patch"]);
-    let tag_name = format!("archive/{}", parent_short_hash.trim());
+    // Confirm archive tag
+    let log_output =
+        in_repo_dir.stdout(&args!["git log", target_branch, " --pretty=format:%h\\ %s"]);
+    let commits = parse_git_log(&log_output);
+    let commit_short_hash = commits.get(commit_message).unwrap();
+    let tag_name = format!("archive/{}", commit_short_hash.trim());
     assert_eq!(
         in_repo_dir.stdout(&args!["git tag -l", &tag_name]).trim(),
         tag_name
