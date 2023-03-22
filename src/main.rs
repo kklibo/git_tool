@@ -1,7 +1,9 @@
+mod string_logger;
+
 use clap::Parser;
-use log::{error, info, LevelFilter, Log, Metadata, Record};
+use log::{error, info, LevelFilter};
 use std::process::{Command, Output};
-use std::sync::Mutex;
+use string_logger::StringLogger;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -35,33 +37,6 @@ pub fn run(bin: &str, args: &[&str]) -> Output {
         std::process::exit(1);
     }
     output
-}
-
-struct StringLogger {
-    s: Mutex<String>,
-}
-impl StringLogger {
-    const fn new() -> Self {
-        Self {
-            s: Mutex::new(String::new()),
-        }
-    }
-    fn get(&self) -> String {
-        let a = self.s.lock().unwrap();
-        a.clone()
-    }
-}
-impl Log for StringLogger {
-    fn enabled(&self, _metadata: &Metadata) -> bool {
-        true
-    }
-
-    fn log(&self, record: &Record) {
-        let mut a = self.s.lock().unwrap();
-        a.push_str(&format!("{} - {}\n", record.level(), record.args()));
-    }
-
-    fn flush(&self) {}
 }
 
 static LOGGER: StringLogger = StringLogger::new();
