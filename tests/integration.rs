@@ -18,6 +18,7 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
 }
 
 #[test]
-fn test_history_subset_squash() {
+fn test() {
     fixtures::test_history_subset_squash(run);
+    fixtures::test_history_subset_squash_from_head(run);
 }

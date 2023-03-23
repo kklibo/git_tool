@@ -2,7 +2,6 @@
 
 mod src;
 
-use src::common::match_branch_history;
 use src::fixtures;
 use src::runner::Runner;
 use std::path::PathBuf;
@@ -15,16 +14,6 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
 
     in_repo_dir.command(&args!["git branch parent", parent_hash]);
     in_repo_dir.command(&args!["git branch section", section_hash]);
-
-    // Test: confirm expected branch history
-    assert!(match_branch_history(
-        &in_repo_dir,
-        target_branch,
-        &[5, 4, 3, 2, 1]
-    ));
-    assert!(match_branch_history(&in_repo_dir, "parent", &[2, 1]));
-    assert!(match_branch_history(&in_repo_dir, "section", &[4, 3, 2, 1]));
-
     in_repo_dir.command(&args!["git checkout parent"]);
     in_repo_dir.command(&args!["git merge --squash --no-commit section"]);
     in_repo_dir.command(&args!["git commit -m", commit_message, "--allow-empty"]);
@@ -45,6 +34,7 @@ fn run(repo_dir: PathBuf, parent_hash: &str, section_hash: &str, commit_message:
 }
 
 #[test]
-fn test_history_subset_squash() {
+fn test() {
     fixtures::test_history_subset_squash(run);
+    fixtures::test_history_subset_squash_from_head(run);
 }
