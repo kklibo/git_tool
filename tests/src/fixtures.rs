@@ -21,6 +21,21 @@ where
     );
 }
 
+pub fn test_history_subset_squash_from_head<T>(to_test: T)
+where
+    T: Fn(PathBuf, &str, &str, &str),
+{
+    test_base(
+        to_test,
+        |runner| do_commits(runner, 5),
+        "commit2",
+        "commit5",
+        "commit6",
+        &[6, 2, 1],
+        &[5, 4, 3, 2, 1],
+    );
+}
+
 pub fn test_base<T, U>(
     f: T,
     populate_repo: U,
@@ -36,10 +51,10 @@ pub fn test_base<T, U>(
     let temp_dir = tempdir().unwrap();
 
     let in_repo_dir = set_up_repo(&temp_dir);
-    populate_repo(&in_repo_dir);
-
     let target_branch = "target";
     in_repo_dir.command(&args!["git checkout -b", target_branch]);
+
+    populate_repo(&in_repo_dir);
 
     let log_output = in_repo_dir.stdout(&args!["git log --pretty=format:%H\\ %s"]);
     let commits = parse_git_log(&log_output);
