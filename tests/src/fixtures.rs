@@ -2,6 +2,7 @@
 
 use crate::args;
 use crate::src::common::{do_commits, match_branch_history, parse_git_log, set_up_repo};
+use crate::src::runner::Runner;
 use std::path::PathBuf;
 use tempfile::tempdir;
 
@@ -11,6 +12,7 @@ where
 {
     test_base(
         to_test,
+        |runner| do_commits(runner, 5),
         "commit2",
         "commit4",
         "commit6",
@@ -19,20 +21,22 @@ where
     );
 }
 
-pub fn test_base<T>(
+pub fn test_base<T, U>(
     f: T,
+    populate_repo: U,
     parent_msg: &str,
     section_msg: &str,
     commit_message: &str,
-    branch_history: &[usize],
-    tag_history: &[usize],
+    expected_branch_history: &[usize],
+    expected_tag_history: &[usize],
 ) where
     T: Fn(PathBuf, &str, &str, &str),
+    U: Fn(&Runner),
 {
     let temp_dir = tempdir().unwrap();
 
     let in_repo_dir = set_up_repo(&temp_dir);
-    do_commits(&in_repo_dir, 5);
+    populate_repo(&in_repo_dir);
 
     let target_branch = "target";
     in_repo_dir.command(&args!["git checkout -b", target_branch]);
@@ -53,7 +57,7 @@ pub fn test_base<T>(
     assert!(match_branch_history(
         &in_repo_dir,
         target_branch,
-        branch_history
+        expected_branch_history
     ));
 
     // Confirm archive tag + history
@@ -66,7 +70,11 @@ pub fn test_base<T>(
         in_repo_dir.stdout(&args!["git tag -l", &tag_name]).trim(),
         tag_name
     );
-    assert!(match_branch_history(&in_repo_dir, &tag_name, tag_history));
+    assert!(match_branch_history(
+        &in_repo_dir,
+        &tag_name,
+        expected_tag_history
+    ));
 
     // Confirm temp working branches have been deleted
     let branches = in_repo_dir.stdout(&args!["git branch --list parent section"]);
