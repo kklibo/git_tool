@@ -20,7 +20,8 @@ macro_rules! git {
     ($($e:expr),+ $(,)?) => {
         {
             let mut v = vec![];
-            $(v.extend($e.split(" "));)+
+            $(v.append(&mut shlex::split($e).unwrap());)+
+            let v: Vec<_> = v.iter().map(|s|s.as_str()).collect();
             run("git", &v)
         }
     };
@@ -55,7 +56,11 @@ fn main() {
 
     git!("checkout parent");
     git!("merge --squash --no-commit section");
-    git!("commit -m", &args.commit_message, "--allow-empty");
+    git!(
+        "commit -m",
+        &shlex::quote(&args.commit_message),
+        "--allow-empty"
+    );
 
     let diff = git!("diff parent section");
     assert!(diff.stdout.is_empty());
