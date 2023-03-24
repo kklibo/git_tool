@@ -28,10 +28,12 @@ macro_rules! git {
 }
 
 pub fn run(bin: &str, args: &[&str]) -> Output {
-    info!("running: \"{bin} {}\"", args.join(" "));
+    let quoted: Vec<_> = args.iter().map(|s| shlex::quote(s)).collect();
+    info!("running: \"{bin} {}\"", quoted.join(" "));
+
     let output = Command::new(bin).args(args).output().unwrap();
     if !output.status.success() {
-        error!("{} from: \"{} {}\"", output.status, bin, args.join(" "));
+        error!("{} from: \"{bin} {}\"", output.status, quoted.join(" "));
         info!("exiting: exit status 1");
         eprintln!("FAILED, dumping log:");
         eprint!("{}", LOGGER.get());
