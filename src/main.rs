@@ -74,11 +74,8 @@ fn main() {
 
     git!("checkout parent");
     git!("merge --squash --no-commit section");
-    git!(
-        "commit -m",
-        &shlex::quote(&args.commit_message),
-        "--allow-empty"
-    );
+    let commit_message = shlex::quote(&args.commit_message);
+    git!("commit -m", &commit_message, "--allow-empty");
 
     let diff = git!("diff parent section");
     if !diff.stdout.is_empty() {
